@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # Local Intelligence Workstation Web Gateway & UI
+  workstation:
+    image: python:3.11-slim
+    container_name: liw-gateway
+    restart: unless-stopped
+    ports:
+      - "3300:3300"
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: python3 server.py 3300
+    depends_on:
+      - ollama
+
+  # Ollama Autoregressive LLM & Vision Daemon
+  ollama:
+    image: ollama/ollama:latest
+    container_name: liw-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    # GPU Acceleration (NVIDIA):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # Whisper ASR Speech-to-Text Transcription Service
+  whisper:
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    container_name: liw-whisper
+    restart: unless-stopped
+    ports:
+      - "8178:9000"
+    environment:
+      - ASR_MODEL=base
+      - ASR_ENGINE=faster_whisper
+
+  # Piper Neural Local Text-to-Speech Service
+  piper:
+    image: rhasspy/wyoming-piper:latest
+    container_name: liw-piper
+    restart: unless-stopped
+    ports:
+      - "5000:10200"
+    command: --voice en_US-lessac-medium
+
+volumes:
+  ollama_models:

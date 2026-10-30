@@ -6,8 +6,8 @@ while lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null 2>&1; do
     PORT=$((PORT+1))
 done
 
-echo "Starting Ollama Studio on http://localhost:$PORT ..."
-python3 -m http.server $PORT &
+echo "Starting Local Intelligence Workstation on http://localhost:$PORT ..."
+python3 server.py $PORT &
 SERVER_PID=$!
 
 sleep 0.8

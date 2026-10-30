@@ -8,6 +8,6 @@ if not errorlevel 1 (
     set /a PORT+=1
     goto check_port
 )
-echo Starting Ollama Studio on http://localhost:%PORT% ...
+echo Starting Local Intelligence Workstation on http://localhost:%PORT% ...
 start "" http://localhost:%PORT%
-python -m http.server %PORT%
+python server.py %PORT%

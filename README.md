@@ -1,179 +1,152 @@
-# Ollama Studio
+# Local Intelligence Workstation (LIW)
 
-A minimalist local inference workstation and client interface for [Ollama](https://ollama.com).
+A high-density, professional local AI engineering workstation and multi-modality client interface designed for self-hosted artificial intelligence.
 
-Ollama Studio is designed with an emphasis on usability, information density, and a classic engineering document aesthetic. It runs entirely in the browser as a standalone single-page application with zero build tools, package managers, or external runtimes—requiring only a standard static web server (such as Python's built-in `http.server`) to serve client assets.
-
----
-
-## Architecture & How It Works
-
-Ollama Studio operates strictly on the client side, communicating directly with the local Ollama daemon via its REST endpoints.
-
-```
-┌──────────────────────────────────────┐          REST / Streams          ┌──────────────────────────┐
-│          Ollama Studio UI            │ ───────────────────────────────> │      Ollama Daemon       │
-│  (index.html · HTML5 / CSS3 / ES6)   │ <─────────────────────────────── │  (http://127.0.0.1:11434) │
-└──────────────────────────────────────┘   /api/chat, /api/ps, /api/show  └──────────────────────────┘
-                   │
-                   ▼
-         Browser localStorage
-     (sessions, settings, cache)
-```
-
-- **Client-Side Storage**: Conversations, model configurations, and UI settings persist exclusively in browser `localStorage`. No telemetry, analytics, or user inputs ever leave the local machine.
-- **Direct Daemon Integration**:
-  - `/api/tags`: Discovers locally pulled models and displays metadata.
-  - `/api/ps`: Monitors active memory residency and GPU VRAM offload percentages in real time.
-  - `/api/show`: Inspects model architecture, parameter size, context capacity, and quantization format.
-  - `/api/chat`: Streams responses using native `ReadableStream` chunks with live token evaluation.
-  - `/api/generate`: Issues instant memory eviction requests (`keep_alive: 0`) to release GPU memory on demand.
-  - `/api/pull`: Downloads models with real-time progress and bandwidth indicators.
+**Local Intelligence Workstation** coordinates multiple independent local inference engines into a single, cohesive technical operating environment—supporting autoregressive text generation, vision-language models, diffusion image generation, speech-to-text audio transcription, and neural text-to-speech synthesis without cloud dependencies or subscription APIs.
 
 ---
 
-## Core Capabilities
+## Architecture: Multi-Backend Orchestration
 
-### Technical Engineering Layout
-- **High-Density Document Canvas**: Structured like a technical ledger rather than a bubbly consumer chat app. Clean hairline rules, sharp 0px corners, and an archival parchment aesthetic.
-- **Session Ledger**: Left sidebar organizes conversations with timestamps (`YYYY-MM-DD HH:MM`). Supports inline in-place renaming (double-click or hover action), search filtering, and a right-click context menu.
-- **Top-Right Status Toasts**: Compact, single-row notifications positioned out of the way of the composer and telemetry bars, with auto-dismiss and hover-pause.
+Local Intelligence Workstation operates as an intelligent web gateway (`server.py`) serving a zero-build client application that communicates concurrently with local daemons:
 
-### Telemetry & Memory Monitoring
-- **Live Stream Metrics**: Header and status strip display Time to First Token (TTFT), real-time generation speed (tokens per second), prompt evaluation duration, and total turnaround time.
-- **VRAM Residency & Instant Eviction**: Detects whether model weights are 100% loaded in GPU VRAM or partially offloaded to system RAM. Includes a one-click "Evict VRAM" control to clear GPU memory without restarting the Ollama service.
-- **Unified Header Stream Control**: Real-time loading stages (`Loading Model...`, `Evaluating Prompt...`) and inline `Abort` / `Evict` actions are integrated directly into the assistant header line during generation.
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                   Local Intelligence Workstation                      │
+│            (Single-Page Engineering Canvas · HTML5 / CSS3 / ES6)       │
+└────────────────────────────────────┬───────────────────────────────────┘
+                                     │ HTTP / REST / Streams
+                                     ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                      server.py · API Gateway                           │
+│     - Multi-Backend Status & Latency Monitoring                        │
+│     - Model Hub Scrapers (Ollama · Hugging Face · CivitAI)             │
+│     - Reverse Proxy with Split GGUF Shard Verification                 │
+└───────┬──────────────┬──────────────┬──────────────┬───────────────────┘
+        │              │              │              │
+        ▼              ▼              ▼              ▼
+┌──────────────┐┌──────────────┐┌──────────────┐┌───────────────────────┐
+│    Ollama    ││   SD WebUI   ││   Whisper    ││       Piper TTS       │
+│ (Port 11434) ││ (Port 7860)  ││ (Port 8178)  ││      (Port 5000)      │
+│  Text & VLM  ││ Diffusion AI ││ Speech-to-Txt││     Text-to-Speech    │
+└──────────────┘└──────────────┘└──────────────┘└───────────────────────┘
+```
 
-### Context Window & Model Controls
-- **Expanded Context Presets**: Configurable context size (`num_ctx`) supporting presets from 2,048 up to 262,144 tokens (256K), allowing full utilization of large-context architectures (e.g., Qwen 3.5, Llama 3.1).
-- **Installed Models Library**: Modal table listing parameter count, quantization format, file size, and capabilities. Actively reflects the current model with an `ACTIVE` badge, disabled action state, and row highlight.
-- **Execution Modes**:
-  - **Thinking**: Enables native Chain-of-Thought reasoning.
-  - **Fast / No-Think**: Injects directives to bypass reasoning scratchpads for immediate responses.
-  - **JSON Mode**: Enforces valid JSON schema formatting via Ollama's grammar-constrained sampler.
-  - **Raw Mode**: Bypasses template formatting for direct prompt testing.
+### Supported Modalities & Inference Engines
 
-### Reasoning Scratchpad & Formatting
-- **Chain-of-Thought Scratchpad**: Automatically isolates `<think>` blocks emitted by reasoning models (e.g., DeepSeek R1, Qwen 3.5). Features a stable live timer, token counter, and an in-box copy button.
-- **Mathematical Formula Rendering**: LaTeX equations rendered client-side via KaTeX with inline and display math delimiters.
-- **Syntax Highlighting**: Code blocks formatted with language headers and one-click copy actions via Highlight.js.
-- **Multimodal Support**: Paste or attach images directly into the composer for vision-capable models (LLaVA, MiniCPM-V).
-- **Document Export**: One-click export to structured Markdown or JSON, plus clipboard copying.
+| Modality | Default Engine | Port | Capabilities |
+|:---|:---|:---|:---|
+| **💬 Text LLM & Vision** | **Ollama** (`llama.cpp`) | `11434` | Autoregressive reasoning, thinking scratchpad, image attachments |
+| **🎨 Diffusion Images** | **SD WebUI** / **ComfyUI** | `7860` / `8188` | Text-to-Image, aspect ratio presets, CFG, samplers, seeds |
+| **🎙️ Speech-to-Text** | **whisper.cpp** / **faster-whisper** | `8178` | Live microphone capture, audio upload, timestamped transcripts |
+| **🔊 Text-to-Speech** | **Piper TTS** / Web Speech API | `5000` | Real-time neural voice synthesis, inline assistant voice playback |
+| **🌐 Model Hub** | **Multi-Source Gateway** | Gateway | Ollama Registry, HuggingFace Hub (GGUF), CivitAI (Checkpoints) |
 
 ---
 
 ## Quick Start
 
-### Prerequisites
+### 1. Launch the Workstation
 
-1. **Ollama**: Download and install from [ollama.com](https://ollama.com). Ensure the service is active (`ollama serve` or via the desktop app).
-2. **Python 3**: Preinstalled on macOS and Linux; standard installer on Windows.
+Run the launcher script corresponding to your operating system:
 
-### Launching the Application
-
-**macOS**:
-Double-click `start.command` in Finder, or run in Terminal:
 ```bash
-./start.command
-```
-
-**Linux / macOS Terminal**:
-```bash
-chmod +x start.sh
+# macOS / Linux
 ./start.sh
-```
 
-**Windows**:
-Double-click `start.bat` or run in Command Prompt:
-```cmd
+# macOS Finder One-Click
+Double-click start.command
+
+# Windows
 start.bat
+
+# Direct Python Execution
+python3 server.py 3300
 ```
 
-**Manual Start**:
-Run Python's built-in static server from the project directory:
+Open your browser to `http://localhost:3300`.
+
+### 2. Preflight Check & Setup Guide
+
+Open `http://localhost:3300/setup` (or click **SETUP ↗** in the bottom telemetry bar) to run automated connectivity checks and access step-by-step installation instructions for every backend across macOS, Linux, Windows, and Docker.
+
+### 3. Optional: Turnkey Docker Deployment
+
+To run all inference backends containerized:
+
 ```bash
-python3 -m http.server 3300
-```
-Open your browser to:
-```
-http://localhost:3300
+docker compose up -d
 ```
 
 ---
 
-## Configuring Ollama CORS
+## Workstation Studios
 
-Web browsers enforce Cross-Origin Resource Sharing (CORS) when a web application served from `http://localhost:3300` issues requests to `http://127.0.0.1:11434`.
+### 💬 Chat & Reasoning Studio
+- **High-Density Technical Canvas**: Monospace document ledger with hairline rules, sharp 0px corners, and archival parchment theme.
+- **Thinking / Chain-of-Thought Scratchpad**: Isolates `<think>` blocks emitted by reasoning architectures (DeepSeek R1, Qwen 2.5) with a live generation timer, token speed counter, and copy controls.
+- **Vision & Multimodal Attachments**: Paste or attach images, documents, and code files directly into the prompt composer.
+- **`/imagine <prompt>` Slash Command**: Type `/imagine cinematic view of mountains` directly in the chat composer to synthesize diffusion images and view them inline with download and lightbox controls.
+- **🎙️ Composer Voice Dictation**: Click the microphone button in the composer bar to dictate speech directly into the prompt box via Whisper ASR.
+- **🔊 Voice Playback (`Listen`)**: Click `Read Aloud` on any assistant response to stream speech via Piper TTS or browser Web Speech.
 
-If Ollama blocks connections with HTTP 403 or network errors, set the `OLLAMA_ORIGINS` environment variable:
+### 🎨 Image Generation Studio
+- **Diffusion Inspector**: Configure checkpoint models, synthesis prompts, negative prompts, sampling methods (Euler a, DPM++ 2M Karras, DDIM), sampling steps, and CFG scale.
+- **Aspect Ratio Presets**: One-click switching between `1:1 (512x512)`, `1:1 HD (1024x1024)`, `3:4 Portrait (768x1024)`, and `16:9 Landscape (1024x576)`.
+- **Live Progress & Sampler Feedback**: Real-time progress percentage bar and step ETA indicators.
+- **Stage Canvas**: High-resolution image canvas with pan, zoom lightbox modal, PNG download, and base64 copying.
+- **Filmstrip History**: Local history gallery of recent generations; click any thumbnail to review parameters or inject into chat.
 
-### macOS (GUI App)
-If Ollama runs as a background menu bar item:
-```bash
-launchctl setenv OLLAMA_ORIGINS "*"
-```
-Then quit Ollama completely from the menu bar icon and restart it.
+### 🎙️ Audio Lab
+- **Microphone Capture**: Browser `MediaRecorder` audio recording with live countdown timer and hairline VU level meter.
+- **Audio File Upload**: Drag-and-drop or browse `.wav`, `.mp3`, `.m4a`, `.flac`, `.ogg`, or `.webm` files.
+- **Audio Scrubber Player**: Integrated waveform scrubber for playback and review.
+- **Whisper ASR Transcription**: Single-click transcription with multi-language detection, formatted transcript editing, clipboard copy, and `.txt` export.
+- **Neural TTS Synthesizer**: Text input card to synthesize neural speech using Piper voices or system browser voices with speed adjustment.
 
-If launching Ollama from Terminal:
-```bash
-OLLAMA_ORIGINS="*" ollama serve
-```
-
-### Linux (systemd)
-Edit the service configuration:
-```bash
-sudo systemctl edit ollama.service
-```
-Add the following lines:
-```ini
-[Service]
-Environment="OLLAMA_ORIGINS=*"
-```
-Reload and restart:
-```bash
-sudo systemctl daemon-reload
-sudo systemctl restart ollama
-```
-
-### Windows
-1. Open **System Properties** > **Advanced** > **Environment Variables**.
-2. Under User Variables, click **New**.
-3. Name: `OLLAMA_ORIGINS`
-4. Value: `*`
-5. Restart Ollama from the system tray.
+### 📱 Mobile & Responsive Experience
+- **Adaptive Command Grid**: Balanced 2x2 mobile header grid maintaining strict 28px button heights, sharp monochrome borders, and readable typography.
+- **Flush Action Composer**: Single-row mobile prompt bar with fixed 36px flush alignment across the prompt input, microphone dictation, attachment picker, and send button.
+- **Segmented Toolbars**: Horizontally scrollable single-row tab bars for Model Hub categories and Settings modals, preventing vertical wrapping on small screens.
+- **Non-Collapsing Card Layout**: Isolated workspace panes and Model Hub cards preventing layout shifting, element stacking, or touch target collisions on mobile viewports.
 
 ---
 
-## Keyboard Shortcuts
+## Universal Model Hub
 
-| Shortcut | Action |
-| --- | --- |
-| `Enter` or `Ctrl + Enter` | Send prompt |
-| `Shift + Enter` | Insert newline in composer |
-| `Escape` | Abort active generation / close active modal |
-| `Double-Click` | Inline rename session in ledger |
-| `Enter` (while renaming) | Save new session name |
-| `Escape` (while renaming) | Cancel session rename |
-| `Arrow Up / Down` | Recall previous prompt in an empty composer |
+Access the Model Hub via the **Hub ↓** button in the command header:
 
----
-
-## Project Structure
-
-```
-ollama-studio/
-├── index.html        # Primary single-page application (UI, CSS, JS)
-├── chat.html         # Compatibility mirror
-├── start.command     # macOS automated launcher
-├── start.sh          # Linux / Unix launcher
-├── start.bat         # Windows automated launcher
-├── .gitignore        # Version control ignore list
-├── LICENSE           # MIT License
-└── README.md         # Technical documentation
-```
+1. **Ollama Registry**:
+   - Live scraping and search across all models on `ollama.com`.
+   - Real-time tag resolution and one-click pulling into Ollama.
+2. **Hugging Face Hub**:
+   - Search tens of thousands of community GGUF models across all official pipeline categories (`text-generation`, `image-text-to-text`, `text-to-image`, `text-to-speech`, `automatic-speech-recognition`, etc.).
+   - **Modality-Aware Action Architecture**: Distinguishes autoregressive LLMs/VLMs from text-to-image diffusion models (such as FLUX.1, SDXL, and SD 1.5/3).
+     - **Autoregressive Models (LLMs / VLMs)**: Provide 1-click `↓ Pull to Ollama`, dynamic quantization tag selectors, and custom Ollama Modelfile generation.
+     - **Diffusion Models (FLUX / Stable Diffusion)**: Clearly labeled with `⚡ ComfyUI / Forge (Not Ollama)` notices. Provides `⬇ ComfyUI / Forge GGUF` direct browser download links, copyable direct URLs, and copyable `wget` terminal commands targeting `ComfyUI/models/diffusion_models/` or `models/unet/`. Intercepts invalid pull attempts with technical guidance.
+   - **Split GGUF Shard Detection**: Automatically flags multi-part shards (`-00001-of-00002.gguf`) with warning badges and prevents failed pulls by recommending single-file variants.
+   - High-speed mirror selector (`huggingface.co` vs `hf-mirror.com`) and token authentication.
+   - Modelfile Builder: Generate custom Ollama Modelfiles with one click for supported LLMs.
+3. **CivitAI Diffusion Hub**:
+   - Search Stable Diffusion checkpoints, LoRAs, and VAEs.
+   - View base model tags (`Pony`, `SDXL 1.0`, `SD 1.5`, `FLUX.1 D`), download statistics, and direct safetensors download links.
 
 ---
 
-## License
+## Configuration & Settings
 
-This project is open-source software licensed under the [MIT License](LICENSE).
+Open **Settings (⚙)** to manage hardware parameters and inference backends:
+
+- **Backends & Engines**: View live connectivity and ping latency for Ollama, SD WebUI, ComfyUI, Whisper ASR, and Piper TTS. Save and persist custom URLs to `backends.json`.
+- **Hardware & Context**: Adjust context window size (`num_ctx`) from 2,048 up to 262,144 tokens (256K). Configure temperature and sampling parameters.
+- **System Persona**: Choose academic, software engineering, concise, or Socratic system prompt directives.
+- **Voice & Speech**: Enable auto-speech playback for assistant messages, choose preferred TTS voices, and set speech rate.
+
+---
+
+## Privacy & Security
+
+Local Intelligence Workstation operates **entirely on your local machine**:
+- No external telemetry, tracking, or cloud phone-home scripts.
+- Sessions and configurations persist strictly in your browser's local storage and `backends.json`.
+- Fully functional in air-gapped and offline environments.

@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Engine Fleet Controller &amp; Preflight Telemetry · Local Intelligence Workstation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-top-bar: #ECEBE5;
+  --bg-page: #F8F6ED;
+  --bg-card: #FAF8F1;
+  --bg-surface: #FFFFFF;
+  --bg-btn: #EDEBE4;
+  --bg-btn-hover: #DFDCD2;
+  --bg-code: #0F1117;
+  --border-frame: #C2B9A5;
+  --border-rule: #8C8270;
+  --border-dark: #1A1816;
+  --text-main: #1A1816;
+  --text-muted: #555555;
+  --font-mono: 'IBM Plex Mono', Menlo, Consolas, 'Courier New', Courier, monospace;
+  
+  --status-pass: #16a34a;
+  --status-pass-bg: #e8f5e9;
+  --status-fail: #dc2626;
+  --status-fail-bg: #ffebee;
+  --status-warn: #ca8a04;
+  --status-warn-bg: #fff8e1;
+  --status-standby: #6b7280;
+  --status-standby-bg: #f3f4f6;
+  --status-cyan: #0891b2;
+  --status-cyan-bg: #e0f7fa;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-radius: 0 !important; /* Strict Workstation Aesthetic: Sharp 0px corners */
+}
+
+html, body {
+  background: var(--bg-page);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* Page Frame Layout */
+.workstation-frame {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 16px 20px 60px 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   1. TOP COMMAND BAR & HEADER
+   ═══════════════════════════════════════════════════════════════════ */
+.top-command-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-top-bar);
+  border: 1px solid var(--border-dark);
+  margin-bottom: 16px;
+}
+
+.brand-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.command-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-ws {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border-dark);
+  background: var(--bg-btn);
+  color: var(--text-main);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-ws:hover:not(:disabled) {
+  background: var(--border-dark);
+  color: #FFFFFF;
+}
+
+.btn-ws:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-ws.primary {
+  background: var(--text-main);
+  color: #FFFFFF;
+  border-color: #000000;
+}
+
+.btn-ws.primary:hover:not(:disabled) {
+  background: #333333;
+}
+
+.save-status-indicator {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--status-pass);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   2. FLEET TELEMETRY HUD MATRIX (TOP OVERVIEW STRIP)
+   ═══════════════════════════════════════════════════════════════════ */
+.fleet-hud-matrix {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.hud-tile {
+  background: var(--bg-card);
+  border: 1px solid var(--border-frame);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.hud-tile:hover {
+  border-color: var(--border-dark);
+  background: var(--bg-surface);
+}
+
+.hud-tile-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hud-name {
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hud-port {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.hud-tile-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hud-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.preflight-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--status-standby);
+  display: inline-block;
+}
+
+.preflight-dot.pass { background: var(--status-pass); box-shadow: 0 0 4px var(--status-pass); }
+.preflight-dot.fail { background: var(--status-fail); }
+.preflight-dot.warn { background: var(--status-warn); }
+
+.hud-latency {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   3. RESPONSIVE ENGINE FLEET GRID (2 COLUMNS DESKTOP)
+   ═══════════════════════════════════════════════════════════════════ */
+.fleet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+/* Engine Card Module */
+.engine-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-frame);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+/* Card Header */
+.engine-card-header {
+  padding: 10px 14px;
+  background: #F2EFE6;
+  border-bottom: 1px solid var(--border-frame);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.engine-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.engine-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.engine-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.engine-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-main);
+}
+
+.engine-role {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.engine-status-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-status {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid currentColor;
+}
+
+.section-status.online {
+  color: var(--status-pass);
+  background: var(--status-pass-bg);
+  border-color: #81c784;
+}
+
+.section-status.offline {
+  color: var(--status-fail);
+  background: var(--status-fail-bg);
+  border-color: #e57373;
+}
+
+.section-status.optional {
+  color: var(--status-warn);
+  background: var(--status-warn-bg);
+  border-color: #ffd54f;
+}
+
+.section-status.starting {
+  color: #0284c7;
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+  animation: pulseStarting 1.5s infinite;
+}
+
+@keyframes pulseStarting {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* Card Body */
+.engine-card-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.engine-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Compact Specs Matrix Strip */
+.engine-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px 12px;
+  padding: 6px 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-frame);
+  font-size: 10px;
+}
+
+.spec-cell {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.spec-key {
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.spec-val {
+  color: var(--text-main);
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spec-val code {
+  font-family: var(--font-mono);
+  background: var(--bg-btn);
+  padding: 0 4px;
+  border: 1px solid var(--border-frame);
+}
+
+/* Service Engine Control Bar */
+.service-control-bar {
+  background: #F3EFE6;
+  border: 1px solid var(--border-frame);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.svc-telemetry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.svc-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.svc-pill {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  letter-spacing: 0.04em;
+  border: 1px solid currentColor;
+}
+
+.svc-pill.online { background: var(--status-pass-bg); color: var(--status-pass); border-color: #81c784; }
+.svc-pill.stopped { background: var(--status-standby-bg); color: var(--text-muted); border-color: #b0bec5; }
+.svc-pill.starting { background: var(--status-warn-bg); color: var(--status-warn); border-color: #ffe082; animation: pulseStarting 1.5s infinite; }
+.svc-pill.installing { background: var(--status-cyan-bg); color: var(--status-cyan); border-color: #80deea; animation: pulseStarting 1.5s infinite; }
+.svc-pill.error { background: var(--status-fail-bg); color: var(--status-fail); border-color: #ef9a9a; }
+
+.svc-details {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.svc-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.btn-svc {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--border-frame);
+  background: var(--bg-btn);
+  color: var(--text-main);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.btn-svc:hover:not(:disabled) {
+  border-color: var(--border-dark);
+  background: var(--bg-surface);
+}
+
+.btn-svc:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-svc.start {
+  background: #e8f5e9;
+  color: #1b5e20;
+  border-color: #a5d6a7;
+}
+
+.btn-svc.start:hover:not(:disabled) {
+  background: #c8e6c9;
+}
+
+.btn-svc.stop {
+  background: #ffebee;
+  color: #b71c1c;
+  border-color: #ef9a9a;
+}
+
+.btn-svc.stop:hover:not(:disabled) {
+  background: #ffcdd2;
+}
+
+.btn-svc.install {
+  background: #e0f7fa;
+  color: #006064;
+  border-color: #80deea;
+}
+
+/* Endpoint URL Probe & Config Row */
+.endpoint-config-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.endpoint-input-wrap {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.endpoint-input {
+  flex: 1;
+  height: 28px;
+  padding: 0 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  border: 1px solid var(--border-frame);
+  background: var(--bg-surface);
+  color: var(--text-main);
+}
+
+.endpoint-input:focus {
+  outline: none;
+  border-color: var(--border-dark);
+}
+
+.btn-probe {
+  height: 28px;
+  padding: 0 10px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  border: 1px solid var(--border-dark);
+  background: var(--bg-btn);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-probe:hover {
+  background: var(--border-dark);
+  color: #FFFFFF;
+}
+
+.conn-test-result {
+  font-size: 10px;
+  font-weight: 600;
+  min-height: 16px;
+  line-height: 1.4;
+}
+
+.conn-test-result.pass { color: var(--status-pass); }
+.conn-test-result.fail { color: var(--status-fail); }
+
+/* Streaming Live Console Drawer */
+.console-drawer {
+  background: #0d0f12;
+  border: 1px solid var(--border-frame);
+  margin-top: 4px;
+}
+
+.console-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #16181d;
+  padding: 4px 8px;
+  border-bottom: 1px solid #232730;
+  font-size: 9.5px;
+  color: #8a919e;
+}
+
+.console-title {
+  color: #7aa2f7;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.console-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.console-tools label {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.console-tools button {
+  background: #232730;
+  border: 1px solid #323846;
+  color: #c0caf5;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  padding: 1px 5px;
+  cursor: pointer;
+}
+
+.console-tools button:hover {
+  background: #323846;
+}
+
+pre.console-output {
+  margin: 0;
+  padding: 8px 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.45;
+  color: #c0caf5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Quick Navigation Links Bar */
+.engine-workspace-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border-frame);
+}
+
+.btn-nav-pill {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border: 1px solid var(--border-frame);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.12s;
+}
+
+.btn-nav-pill:hover {
+  border-color: var(--border-dark);
+  background: var(--bg-btn);
+}
+
+.btn-nav-pill.primary {
+  background: var(--text-main);
+  color: #FFFFFF;
+  border-color: var(--border-dark);
+}
+
+.btn-nav-pill.primary:hover {
+  background: #333333;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   4. SYSTEM DIAGNOSTICS CARD (Card 6)
+   ═══════════════════════════════════════════════════════════════════ */
+.diag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.diag-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-frame);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   5. FOOTER
+   ═══════════════════════════════════════════════════════════════════ */
+.setup-footer {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 2px solid var(--border-dark);
+  font-size: 10.5px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   6. RESPONSIVE MEDIA QUERIES (DESKTOP & MOBILE CLEANUP)
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .fleet-hud-matrix {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .workstation-frame {
+    padding: 12px 10px 40px 10px;
+  }
+  
+  .top-command-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .command-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .btn-ws {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .fleet-hud-matrix {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .fleet-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .engine-specs-grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .svc-actions {
+    width: 100%;
+  }
+
+  .btn-svc {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .btn-nav-pill {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .fleet-hud-matrix {
+    grid-template-columns: 1fr;
+  }
+  
+  .engine-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .engine-status-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="workstation-frame">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       1. TOP COMMAND BAR & HEADER
+       ═══════════════════════════════════════════════════════════════════ -->
+  <header class="top-command-bar">
+    <div class="brand-section">
+      <div class="brand-title">⚙ INFERENCE FLEET // CONTROLLER &amp; TELEMETRY</div>
+      <div class="brand-subtitle">Automated daemon lifecycle, health verification probes, and streaming execution logs</div>
+    </div>
+    <div class="command-actions">
+      <button class="btn-ws primary" id="runAllChecks" onclick="runPreflightChecks()">▶ Run All Probes</button>
+      <button class="btn-ws" id="saveAllBtn" onclick="saveAllConfigurations()">💾 Save URLs</button>
+      <a href="/" class="btn-ws">← Workstation</a>
+      <span class="save-status-indicator" id="saveStatusMsg"></span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       2. FLEET TELEMETRY HUD MATRIX (TOP OVERVIEW STRIP)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="fleet-hud-matrix">
+    <a href="#card_ollama" class="hud-tile">
+      <div class="hud-tile-top">
+        <span class="hud-name">💬 Ollama</span>
+        <span class="hud-port">:11434</span>
+      </div>
+      <div class="hud-tile-bottom">
+        <span class="hud-status-badge"><span class="preflight-dot" id="dotOllama"></span> <span id="hudTxtOllama">PROBING</span></span>
+        <span class="hud-latency" id="msOllama">—</span>
+      </div>
+    </a>
+
+    <a href="#card_sd_webui" class="hud-tile">
+      <div class="hud-tile-top">
+        <span class="hud-name">🎨 SD WebUI</span>
+        <span class="hud-port">:7860</span>
+      </div>
+      <div class="hud-tile-bottom">
+        <span class="hud-status-badge"><span class="preflight-dot" id="dotSd"></span> <span id="hudTxtSd">PROBING</span></span>
+        <span class="hud-latency" id="msSd">—</span>
+      </div>
+    </a>
+
+    <a href="#card_comfyui" class="hud-tile">
+      <div class="hud-tile-top">
+        <span class="hud-name">🔮 ComfyUI</span>
+        <span class="hud-port">:8188</span>
+      </div>
+      <div class="hud-tile-bottom">
+        <span class="hud-status-badge"><span class="preflight-dot" id="dotComfy"></span> <span id="hudTxtComfy">PROBING</span></span>
+        <span class="hud-latency" id="msComfy">—</span>
+      </div>
+    </a>
+
+    <a href="#card_whisper" class="hud-tile">
+      <div class="hud-tile-top">
+        <span class="hud-name">🎙️ Whisper ASR</span>
+        <span class="hud-port">:8178</span>
+      </div>
+      <div class="hud-tile-bottom">
+        <span class="hud-status-badge"><span class="preflight-dot" id="dotWhisper"></span> <span id="hudTxtWhisper">PROBING</span></span>
+        <span class="hud-latency" id="msWhisper">—</span>
+      </div>
+    </a>
+
+    <a href="#card_piper" class="hud-tile">
+      <div class="hud-tile-top">
+        <span class="hud-name">🔊 Piper TTS</span>
+        <span class="hud-port">:5000</span>
+      </div>
+      <div class="hud-tile-bottom">
+        <span class="hud-status-badge"><span class="preflight-dot" id="dotPiper"></span> <span id="hudTxtPiper">PROBING</span></span>
+        <span class="hud-latency" id="msPiper">—</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       3. RESPONSIVE ENGINE FLEET GRID (2 COLUMNS DESKTOP)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="fleet-grid">
+
+    <!-- ── CARD 1: OLLAMA (CORE REQUIRED) ── -->
+    <div class="engine-card" id="card_ollama">
+      <div class="engine-card-header">
+        <div class="engine-identity">
+          <span class="engine-icon">💬</span>
+          <div class="engine-title-group">
+            <span class="engine-title">Ollama LLM Engine</span>
+            <span class="engine-role">AUTOREGRESSIVE LANGUAGE &amp; MULTIMODAL VISION</span>
+          </div>
+        </div>
+        <div class="engine-status-group">
+          <span class="section-status optional" id="statusOllama">CHECKING</span>
+        </div>
+      </div>
+
+      <div class="engine-card-body">
+        <p class="engine-desc">
+          <strong>Core Engine (Required).</strong> Serves LLaMA 3.x, Qwen 3, Mistral, DeepSeek R1, and vision models via <code>llama.cpp</code> with hardware acceleration. Powers chat, reasoning, and image prompt expansion.
+        </p>
+
+        <!-- High-Density Inline Specs -->
+        <div class="engine-specs-grid">
+          <div class="spec-cell">
+            <span class="spec-key">DEFAULT PORT</span>
+            <span class="spec-val"><code>11434</code></span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">HEALTH PROBE</span>
+            <span class="spec-val"><code>GET /api/tags</code></span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">ACCELERATION</span>
+            <span class="spec-val">Metal (MPS) / CUDA</span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">STORAGE</span>
+            <span class="spec-val"><code>~/.ollama/models</code></span>
+          </div>
+        </div>
+
+        <!-- Engine Service Control Bar -->
+        <div class="service-control-bar" id="svcBar_ollama">
+          <div class="svc-telemetry-row">
+            <div class="svc-status-indicator">
+              <span class="svc-pill stopped" id="svcPill_ollama">CHECKING</span>
+              <span class="svc-details" id="svcDetails_ollama">Detecting Ollama CLI daemon...</span>
+            </div>
+            <div class="svc-actions">
+              <button class="btn-svc start" id="btnStart_ollama" onclick="serviceAction('ollama','start')">▶ Start</button>
+              <button class="btn-svc stop" id="btnStop_ollama" onclick="serviceAction('ollama','stop')" disabled>⏹ Stop</button>
+              <button class="btn-svc restart" id="btnRestart_ollama" onclick="serviceAction('ollama','restart')">🔄 Restart</button>
+              <button class="btn-svc console" id="btnConsole_ollama" onclick="toggleConsole('ollama')">📋 Logs</button>
+            </div>
+          </div>
+
+          <!-- Embedded Streaming Console -->
+          <div class="console-drawer" id="consoleDrawer_ollama" style="display:none;">
+            <div class="console-header">
+              <span class="console-title">TERMINAL // OLLAMA DAEMON [LIVE STREAM]</span>
+              <div class="console-tools">
+                <label><input type="checkbox" id="autoscroll_ollama" checked> Scroll</label>
+                <button onclick="clearConsole('ollama')">Clear</button>
+                <button onclick="copyConsoleLogs('ollama')">Copy</button>
+              </div>
+            </div>
+            <pre class="console-output" id="consoleOutput_ollama">Waiting for daemon activity...</pre>
+          </div>
+        </div>
+
+        <!-- Target Endpoint Probe & Config -->
+        <div class="endpoint-config-bar">
+          <div class="endpoint-input-wrap">
+            <input type="text" class="endpoint-input" id="urlOllama" value="http://127.0.0.1:11434" placeholder="http://127.0.0.1:11434">
+            <button class="btn-probe" onclick="testBackend('ollama','urlOllama')">Test Probe</button>
+          </div>
+          <div class="conn-test-result" id="resultOllama"></div>
+        </div>
+
+        <!-- Studio Quick-Links -->
+        <div class="engine-workspace-links">
+          <a href="/" class="btn-nav-pill primary">💬 Open Chat →</a>
+          <a href="/?workspace=hub&tab=ollama" class="btn-nav-pill">📦 Model Hub →</a>
+          <a href="/?workspace=hub&tab=hf" class="btn-nav-pill">⚡ HuggingFace GGUFs →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CARD 2: STABLE DIFFUSION WEBUI (IMAGE GENERATION) ── -->
+    <div class="engine-card" id="card_sd_webui">
+      <div class="engine-card-header">
+        <div class="engine-identity">
+          <span class="engine-icon">🎨</span>
+          <div class="engine-title-group">
+            <span class="engine-title">Stable Diffusion WebUI</span>
+            <span class="engine-role">IMAGE SYNTHESIS &amp; /IMAGINE PROMPTS</span>
+          </div>
+        </div>
+        <div class="engine-status-group">
+          <span class="section-status optional" id="statusSd">CHECKING</span>
+        </div>
+      </div>
+
+      <div class="engine-card-body">
+        <p class="engine-desc">
+          <strong>Image Studio Engine.</strong> Enables text-to-image, img2img, and the chat <code>/imagine</code> command via AUTOMATIC1111/Forge REST API. Managed locally in an isolated virtual environment.
+        </p>
+
+        <!-- High-Density Inline Specs -->
+        <div class="engine-specs-grid">
+          <div class="spec-cell">
+            <span class="spec-key">DEFAULT PORT</span>
+            <span class="spec-val"><code>7860</code></span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">HEALTH PROBE</span>
+            <span class="spec-val"><code>GET /sdapi/v1/sd-models</code></span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">CRITICAL FLAG</span>
+            <span class="spec-val"><code>--api</code></span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">CHECKPOINTS</span>
+            <span class="spec-val"><code>models/Stable-diffusion/</code></span>
+          </div>
+        </div>
+
+        <!-- Engine Service Control Bar -->
+        <div class="service-control-bar" id="svcBar_sd_webui">
+          <div class="svc-telemetry-row">
+            <div class="svc-status-indicator">
+              <span class="svc-pill stopped" id="svcPill_sd_webui">CHECKING</span>
+              <span class="svc-details" id="svcDetails_sd_webui">Detecting local engine...</span>
+            </div>
+            <div class="svc-actions">
+              <button class="btn-svc start" id="btnStart_sd_webui" onclick="serviceAction('sd_webui','start')">▶ Start</button>
+              <button class="btn-svc stop" id="btnStop_sd_webui" onclick="serviceAction('sd_webui','stop')" disabled>⏹ Stop</button>
+              <button class="btn-svc restart" id="btnRestart_sd_webui" onclick="serviceAction('sd_webui','restart')">🔄 Restart</button>
+              <button class="btn-svc install" id="btnInstall_sd_webui" onclick="serviceAction('sd_webui','install')" style="display:none;">⚡ 1-Click Install</button>
+              <button class="btn-svc console" id="btnConsole_sd_webui" onclick="toggleConsole('sd_webui')">📋 Logs</button>
+            </div>
+          </div>
+
+          <!-- Embedded Streaming Console -->
+          <div class="console-drawer" id="consoleDrawer_sd_webui" style="display:none;">
+            <div class="console-header">
+              <span class="console-title">TERMINAL // STABLE DIFFUSION [LIVE STREAM]</span>
+              <div class="console-tools">
+                <label><input type="checkbox" id="autoscroll_sd_webui" checked> Scroll</label>
+                <button onclick="clearConsole('sd_webui')">Clear</button>
+                <button onclick="copyConsoleLogs('sd_webui')">Copy</button>
+              </div>
+            </div>
+            <pre class="console-output" id="consoleOutput_sd_webui">Waiting for engine activity...</pre>
+          </div>
+        </div>
+
+        <!-- Target Endpoint Probe & Config -->
+        <div class="endpoint-config-bar">
+          <div class="endpoint-input-wrap">
+            <input type="text" class="endpoint-input" id="urlSd" value="http://127.0.0.1:7860" placeholder="http://127.0.0.1:7860">
+            <button class="btn-probe" onclick="testBackend('sd_webui','urlSd')">Test Probe</button>
+          </div>
+          <div class="conn-test-result" id="resultSd"></div>
+        </div>
+
+        <!-- Studio Quick-Links -->
+        <div class="engine-workspace-links">
+          <a href="/?workspace=image" class="btn-nav-pill primary">🎨 Open Image Studio →</a>
+          <a href="/?workspace=hub&tab=civitai" class="btn-nav-pill">📦 CivitAI Checkpoints →</a>
+          <a href="/?workspace=hub&tab=hf&search=gguf+flux" class="btn-nav-pill">⚡ FLUX GGUF Weights →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CARD 3: COMFYUI (NODE-BASED DIFFUSION) ── -->
+    <div class="engine-card" id="card_comfyui">
+      <div class="engine-card-header">
+        <div class="engine-identity">
+          <span class="engine-icon">🔮</span>
+          <div class="engine-title-group">
+            <span class="engine-title">ComfyUI Diffusion</span>
+            <span class="engine-role">NODE-BASED VISUAL PIPELINES &amp; FLUX WORKFLOWS</span>
+          </div>
+        </div>
+        <div class="engine-status-group">
+          <span class="section-status optional" id="statusComfy">CHECKING</span>
+        </div>
+      </div>
+
+      <div class="engine-card-body">
+        <p class="engine-desc">
+          <strong>Visual Pipeline Engine.</strong> Node-based visual pipeline for FLUX, SDXL, SD 3, and ControlNet. Workstation coordinates health monitoring and model weight routing into ComfyUI directories.
+        </p>
+
+        <!-- High-Density Inline Specs -->
+        <div class="engine-specs-grid">
+          <div class="spec-cell">
+            <span class="spec-key">DEFAULT PORT</span>
+            <span class="spec-val"><code>8188</code></span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">HEALTH PROBE</span>
+            <span class="spec-val"><code>GET /system_stats</code></span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">MIN VRAM</span>
+            <span class="spec-val">4 GB (Q4) / 12+ GB (FP16)</span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">MODEL PATH</span>
+            <span class="spec-val"><code>models/diffusion_models/</code></span>
+          </div>
+        </div>
+
+        <!-- Engine Service Control Bar -->
+        <div class="service-control-bar" id="svcBar_comfyui">
+          <div class="svc-telemetry-row">
+            <div class="svc-status-indicator">
+              <span class="svc-pill stopped" id="svcPill_comfyui">CHECKING</span>
+              <span class="svc-details" id="svcDetails_comfyui">Detecting local ComfyUI...</span>
+            </div>
+            <div class="svc-actions">
+              <button class="btn-svc start" id="btnStart_comfyui" onclick="serviceAction('comfyui','start')">▶ Start</button>
+              <button class="btn-svc stop" id="btnStop_comfyui" onclick="serviceAction('comfyui','stop')" disabled>⏹ Stop</button>
+              <button class="btn-svc restart" id="btnRestart_comfyui" onclick="serviceAction('comfyui','restart')">🔄 Restart</button>
+              <button class="btn-svc install" id="btnInstall_comfyui" onclick="serviceAction('comfyui','install')" style="display:none;">⚡ 1-Click Install</button>
+              <button class="btn-svc console" id="btnConsole_comfyui" onclick="toggleConsole('comfyui')">📋 Logs</button>
+            </div>
+          </div>
+
+          <!-- Embedded Streaming Console -->
+          <div class="console-drawer" id="consoleDrawer_comfyui" style="display:none;">
+            <div class="console-header">
+              <span class="console-title">TERMINAL // COMFYUI [LIVE STREAM]</span>
+              <div class="console-tools">
+                <label><input type="checkbox" id="autoscroll_comfyui" checked> Scroll</label>
+                <button onclick="clearConsole('comfyui')">Clear</button>
+                <button onclick="copyConsoleLogs('comfyui')">Copy</button>
+              </div>
+            </div>
+            <pre class="console-output" id="consoleOutput_comfyui">Waiting for engine activity...</pre>
+          </div>
+        </div>
+
+        <!-- Target Endpoint Probe & Config -->
+        <div class="endpoint-config-bar">
+          <div class="endpoint-input-wrap">
+            <input type="text" class="endpoint-input" id="urlComfy" value="http://127.0.0.1:8188" placeholder="http://127.0.0.1:8188">
+            <button class="btn-probe" onclick="testBackend('comfyui','urlComfy')">Test Probe</button>
+          </div>
+          <div class="conn-test-result" id="resultComfy"></div>
+        </div>
+
+        <!-- Studio Quick-Links -->
+        <div class="engine-workspace-links">
+          <a href="http://127.0.0.1:8188" target="_blank" class="btn-nav-pill primary">🔮 Launch ComfyUI (8188) ↗</a>
+          <a href="/?workspace=hub&tab=hf&search=gguf+diffusion" class="btn-nav-pill">📦 Diffusion Weights Hub →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CARD 4: WHISPER ASR (SPEECH-TO-TEXT) ── -->
+    <div class="engine-card" id="card_whisper">
+      <div class="engine-card-header">
+        <div class="engine-identity">
+          <span class="engine-icon">🎙️</span>
+          <div class="engine-title-group">
+            <span class="engine-title">Whisper ASR</span>
+            <span class="engine-role">HIGH-ACCURACY SPEECH-TO-TEXT TRANSCRIPTION</span>
+          </div>
+        </div>
+        <div class="engine-status-group">
+          <span class="section-status optional" id="statusWhisper">CHECKING</span>
+        </div>
+      </div>
+
+      <div class="engine-card-body">
+        <p class="engine-desc">
+          <strong>Audio Lab Transcriber.</strong> Powers live microphone dictation in chat and audio transcription in the Audio Lab. Compatible with both <code>whisper.cpp</code> and OpenAI-compatible ASR endpoints.
+        </p>
+
+        <!-- High-Density Inline Specs -->
+        <div class="engine-specs-grid">
+          <div class="spec-cell">
+            <span class="spec-key">DEFAULT PORT</span>
+            <span class="spec-val"><code>8178</code></span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">HEALTH PROBE</span>
+            <span class="spec-val"><code>GET /health</code></span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">MODELS</span>
+            <span class="spec-val">tiny (75MB) to large-v3 (3GB)</span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">API PROTOCOL</span>
+            <span class="spec-val"><code>POST /inference</code> or <code>/v1</code></span>
+          </div>
+        </div>
+
+        <!-- Engine Service Control Bar -->
+        <div class="service-control-bar" id="svcBar_whisper">
+          <div class="svc-telemetry-row">
+            <div class="svc-status-indicator">
+              <span class="svc-pill stopped" id="svcPill_whisper">CHECKING</span>
+              <span class="svc-details" id="svcDetails_whisper">Detecting local Whisper ASR (:8178)...</span>
+            </div>
+            <div class="svc-actions">
+              <button class="btn-svc start" id="btnStart_whisper" onclick="serviceAction('whisper','start')">▶ Start</button>
+              <button class="btn-svc stop" id="btnStop_whisper" onclick="serviceAction('whisper','stop')" disabled>⏹ Stop</button>
+              <button class="btn-svc restart" id="btnRestart_whisper" onclick="serviceAction('whisper','restart')">🔄 Restart</button>
+              <button class="btn-svc console" id="btnConsole_whisper" onclick="toggleConsole('whisper')">📋 Logs</button>
+            </div>
+          </div>
+
+          <!-- Embedded Streaming Console -->
+          <div class="console-drawer" id="consoleDrawer_whisper" style="display:none;">
+            <div class="console-header">
+              <span class="console-title">TERMINAL // WHISPER ASR [LIVE STREAM]</span>
+              <div class="console-tools">
+                <label><input type="checkbox" id="autoscroll_whisper" checked> Scroll</label>
+                <button onclick="clearConsole('whisper')">Clear</button>
+                <button onclick="copyConsoleLogs('whisper')">Copy</button>
+              </div>
+            </div>
+            <pre class="console-output" id="consoleOutput_whisper">Waiting for ASR activity...</pre>
+          </div>
+        </div>
+
+        <!-- Target Endpoint Probe & Config -->
+        <div class="endpoint-config-bar">
+          <div class="endpoint-input-wrap">
+            <input type="text" class="endpoint-input" id="urlWhisper" value="http://127.0.0.1:8178" placeholder="http://127.0.0.1:8178">
+            <button class="btn-probe" onclick="testBackend('whisper','urlWhisper')">Test Probe</button>
+          </div>
+          <div class="conn-test-result" id="resultWhisper"></div>
+        </div>
+
+        <!-- Studio Quick-Links -->
+        <div class="engine-workspace-links">
+          <a href="/?workspace=audio" class="btn-nav-pill primary">🎙️ Open Audio Lab →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CARD 5: PIPER TTS (NEURAL SPEECH SYNTHESIS) ── -->
+    <div class="engine-card" id="card_piper">
+      <div class="engine-card-header">
+        <div class="engine-identity">
+          <span class="engine-icon">🔊</span>
+          <div class="engine-title-group">
+            <span class="engine-title">Piper Neural TTS</span>
+            <span class="engine-role">LOW-LATENCY LOCAL TEXT-TO-SPEECH</span>
+          </div>
+        </div>
+        <div class="engine-status-group">
+          <span class="section-status optional" id="statusPiper">CHECKING</span>
+        </div>
+      </div>
+
+      <div class="engine-card-body">
+        <p class="engine-desc">
+          <strong>Voice Synthesizer.</strong> High-speed neural speech synthesis for assistant "Read Aloud" and Audio Lab generation. If offline, the client seamlessly falls back to the native Web Speech API.
+        </p>
+
+        <!-- High-Density Inline Specs -->
+        <div class="engine-specs-grid">
+          <div class="spec-cell">
+            <span class="spec-key">DEFAULT PORT</span>
+            <span class="spec-val"><code>5000</code></span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">HEALTH PROBE</span>
+            <span class="spec-val"><code>GET /api/voices</code></span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">CLIENT FALLBACK</span>
+            <span class="spec-val">Native Web Speech API</span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">VOICE MODELS</span>
+            <span class="spec-val">15–100 MB ONNX per voice</span>
+          </div>
+        </div>
+
+        <!-- Engine Service Control Bar -->
+        <div class="service-control-bar" id="svcBar_piper">
+          <div class="svc-telemetry-row">
+            <div class="svc-status-indicator">
+              <span class="svc-pill stopped" id="svcPill_piper">CHECKING</span>
+              <span class="svc-details" id="svcDetails_piper">Detecting local Piper TTS server (:5000)...</span>
+            </div>
+            <div class="svc-actions">
+              <button class="btn-svc start" id="btnStart_piper" onclick="serviceAction('piper','start')">▶ Start</button>
+              <button class="btn-svc stop" id="btnStop_piper" onclick="serviceAction('piper','stop')" disabled>⏹ Stop</button>
+              <button class="btn-svc restart" id="btnRestart_piper" onclick="serviceAction('piper','restart')">🔄 Restart</button>
+              <button class="btn-svc console" id="btnConsole_piper" onclick="toggleConsole('piper')">📋 Logs</button>
+            </div>
+          </div>
+
+          <!-- Embedded Streaming Console -->
+          <div class="console-drawer" id="consoleDrawer_piper" style="display:none;">
+            <div class="console-header">
+              <span class="console-title">TERMINAL // PIPER TTS [LIVE STREAM]</span>
+              <div class="console-tools">
+                <label><input type="checkbox" id="autoscroll_piper" checked> Scroll</label>
+                <button onclick="clearConsole('piper')">Clear</button>
+                <button onclick="copyConsoleLogs('piper')">Copy</button>
+              </div>
+            </div>
+            <pre class="console-output" id="consoleOutput_piper">Waiting for TTS activity...</pre>
+          </div>
+        </div>
+
+        <!-- Target Endpoint Probe & Config -->
+        <div class="endpoint-config-bar">
+          <div class="endpoint-input-wrap">
+            <input type="text" class="endpoint-input" id="urlPiper" value="http://127.0.0.1:5000" placeholder="http://127.0.0.1:5000">
+            <button class="btn-probe" onclick="testBackend('piper','urlPiper')">Test Probe</button>
+          </div>
+          <div class="conn-test-result" id="resultPiper"></div>
+        </div>
+
+        <!-- Studio Quick-Links -->
+        <div class="engine-workspace-links">
+          <a href="/?workspace=audio" class="btn-nav-pill primary">🔊 Open Voice Lab →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CARD 6: HOST GATEWAY & FLEET ORCHESTRATION ── -->
+    <div class="engine-card" id="card_gateway">
+      <div class="engine-card-header">
+        <div class="engine-identity">
+          <span class="engine-icon">🎛️</span>
+          <div class="engine-title-group">
+            <span class="engine-title">Gateway &amp; Host Orchestration</span>
+            <span class="engine-role">UNIFIED PROXY ROUTER &amp; DAEMON CONTROLLER</span>
+          </div>
+        </div>
+        <div class="engine-status-group">
+          <span class="section-status online">ACTIVE</span>
+        </div>
+      </div>
+
+      <div class="engine-card-body">
+        <p class="engine-desc">
+          <strong>Workstation Gateway.</strong> Coordinates reverse proxy routing, multi-process management, and unified telemetry streams across all 5 local engines.
+        </p>
+
+        <!-- Diagnostics Specs -->
+        <div class="engine-specs-grid">
+          <div class="spec-cell">
+            <span class="spec-key">GATEWAY PORTS</span>
+            <span class="spec-val"><code>3300 / 3301 / 3302</code></span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">HOST ARCH</span>
+            <span class="spec-val">macOS Apple Silicon (ARM64)</span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">CONFIGURATION</span>
+            <span class="spec-val"><code>backends.json</code></span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-key">DAEMON MODE</span>
+            <span class="spec-val">Subprocess Isolated Venvs</span>
+          </div>
+        </div>
+
+        <div class="diag-list" style="margin-top:4px;">
+          <div class="diag-item">
+            <span style="font-weight:600; color:var(--text-muted);">IMAGE ENGINE STATUS</span>
+            <span style="font-weight:700; color:var(--status-pass);" id="diagSdStatus">AUTOMATIC1111 (Port 7860)</span>
+          </div>
+          <div class="diag-item">
+            <span style="font-weight:600; color:var(--text-muted);">LLM ENGINE STATUS</span>
+            <span style="font-weight:700; color:var(--status-pass);" id="diagOllamaStatus">Ollama Daemon (Port 11434)</span>
+          </div>
+        </div>
+
+        <div class="engine-workspace-links" style="margin-top:auto;">
+          <a href="/" class="btn-nav-pill primary">🖥️ Launch Full Workstation Canvas →</a>
+          <a href="/?workspace=hub" class="btn-nav-pill">📦 Universal Model Hub →</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       5. FOOTER
+       ═══════════════════════════════════════════════════════════════════ -->
+  <footer class="setup-footer">
+    <span>Local Intelligence Workstation · Engine Fleet Controller</span>
+    <span>Archival Engineering Standard · Monospaced Telemetry</span>
+    <a href="/" class="btn-ws">← Back to Studio</a>
+  </footer>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// Preflight Check & Telemetry Engine
+// ═══════════════════════════════════════════════════════════════════
+
+const BACKEND_MAP = {
+  ollama:  { dot: 'dotOllama',  ms: 'msOllama',  status: 'statusOllama',  result: 'resultOllama', hud: 'hudTxtOllama' },
+  sd_webui:{ dot: 'dotSd',     ms: 'msSd',      status: 'statusSd',      result: 'resultSd',     hud: 'hudTxtSd'     },
+  comfyui: { dot: 'dotComfy',  ms: 'msComfy',   status: 'statusComfy',   result: 'resultComfy',  hud: 'hudTxtComfy'  },
+  whisper: { dot: 'dotWhisper', ms: 'msWhisper', status: 'statusWhisper', result: 'resultWhisper',hud: 'hudTxtWhisper' },
+  piper:   { dot: 'dotPiper',  ms: 'msPiper',   status: 'statusPiper',   result: 'resultPiper',  hud: 'hudTxtPiper'  }
+};
+
+const REQUIRED = new Set(['ollama']);
+
+async function runPreflightChecks() {
+  const btn = document.getElementById('runAllChecks');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Probing...';
+  }
+
+  try {
+    const res = await fetch('/api/backends');
+    if (!res.ok) throw new Error('Gateway unreachable');
+    const raw = await res.json();
+    const data = raw.backends || raw;
+
+    const inputMap = {
+      ollama: 'urlOllama',
+      sd_webui: 'urlSd',
+      comfyui: 'urlComfy',
+      whisper: 'urlWhisper',
+      piper: 'urlPiper'
+    };
+
+    for (const [id, info] of Object.entries(BACKEND_MAP)) {
+      const backend = data[id];
+      if (!backend) continue;
+
+      const inputId = inputMap[id];
+      const inputEl = document.getElementById(inputId);
+      if (inputEl && backend.url && !inputEl.dataset.dirty) {
+        inputEl.value = backend.url;
+      }
+
+      const dot = document.getElementById(info.dot);
+      const ms = document.getElementById(info.ms);
+      const statusBadge = document.getElementById(info.status);
+      const hudTxt = document.getElementById(info.hud);
+      const isRequired = REQUIRED.has(id);
+
+      if (backend.online) {
+        if (dot) dot.className = 'preflight-dot pass';
+        const msText = backend.latency_ms ? backend.latency_ms + 'ms' : '✓';
+        if (ms) ms.textContent = msText;
+        if (statusBadge) {
+          statusBadge.className = 'section-status online';
+          statusBadge.textContent = 'ONLINE';
+        }
+        if (hudTxt) hudTxt.textContent = 'ONLINE';
+      } else {
+        if (dot) dot.className = isRequired ? 'preflight-dot fail' : 'preflight-dot warn';
+        if (ms) ms.textContent = '—';
+        if (statusBadge) {
+          statusBadge.className = isRequired ? 'section-status offline' : 'section-status optional';
+          statusBadge.textContent = isRequired ? 'OFFLINE' : 'STANDBY';
+        }
+        if (hudTxt) hudTxt.textContent = isRequired ? 'OFFLINE' : 'STANDBY';
+      }
+    }
+  } catch (e) {
+    for (const info of Object.values(BACKEND_MAP)) {
+      const dot = document.getElementById(info.dot);
+      const ms = document.getElementById(info.ms);
+      const statusBadge = document.getElementById(info.status);
+      const hudTxt = document.getElementById(info.hud);
+      if (dot) dot.className = 'preflight-dot fail';
+      if (ms) ms.textContent = '✗';
+      if (statusBadge) {
+        statusBadge.className = 'section-status offline';
+        statusBadge.textContent = 'ERROR';
+      }
+      if (hudTxt) hudTxt.textContent = 'ERROR';
+    }
+    console.error('Preflight probe failed:', e);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '▶ Run All Probes';
+    }
+  }
+}
+
+async function testBackend(backendId, inputId) {
+  const url = document.getElementById(inputId).value.trim();
+  const info = BACKEND_MAP[backendId];
+  const resultEl = document.getElementById(info.result);
+  if (resultEl) {
+    resultEl.className = 'conn-test-result';
+    resultEl.textContent = 'Probing endpoint...';
+  }
+
+  try {
+    const res = await fetch('/api/backends/probe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: backendId, url: url })
+    });
+    const data = await res.json();
+
+    const dot = document.getElementById(info.dot);
+    const ms = document.getElementById(info.ms);
+    const statusBadge = document.getElementById(info.status);
+    const hudTxt = document.getElementById(info.hud);
+
+    if (data.online) {
+      if (resultEl) {
+        resultEl.className = 'conn-test-result pass';
+        resultEl.textContent = `✓ Connected — ${data.latency_ms || 0}ms latency (HTTP ${data.http_status || 200})`;
+      }
+      if (dot) dot.className = 'preflight-dot pass';
+      if (ms) ms.textContent = (data.latency_ms || 0) + 'ms';
+      if (statusBadge) {
+        statusBadge.className = 'section-status online';
+        statusBadge.textContent = 'ONLINE';
+      }
+      if (hudTxt) hudTxt.textContent = 'ONLINE';
+    } else {
+      if (resultEl) {
+        resultEl.className = 'conn-test-result fail';
+        resultEl.textContent = `✗ Unreachable — ${data.error || 'Connection refused'}`;
+      }
+      const isReq = REQUIRED.has(backendId);
+      if (dot) dot.className = isReq ? 'preflight-dot fail' : 'preflight-dot warn';
+      if (ms) ms.textContent = '—';
+      if (statusBadge) {
+        statusBadge.className = isReq ? 'section-status offline' : 'section-status optional';
+        statusBadge.textContent = isReq ? 'OFFLINE' : 'STANDBY';
+      }
+      if (hudTxt) hudTxt.textContent = isReq ? 'OFFLINE' : 'STANDBY';
+    }
+  } catch (e) {
+    if (resultEl) {
+      resultEl.className = 'conn-test-result fail';
+      resultEl.textContent = `✗ Gateway error: ${e.message}`;
+    }
+  }
+}
+
+async function saveAllConfigurations() {
+  const saveBtn = document.getElementById('saveAllBtn');
+  const msgEl = document.getElementById('saveStatusMsg');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+  }
+  if (msgEl) {
+    msgEl.style.color = 'var(--status-pass)';
+    msgEl.textContent = '';
+  }
+
+  const payload = {
+    ollama: { url: document.getElementById('urlOllama').value.trim() },
+    sd_webui: { url: document.getElementById('urlSd').value.trim() },
+    comfyui: { url: document.getElementById('urlComfy').value.trim() },
+    whisper: { url: document.getElementById('urlWhisper').value.trim() },
+    piper: { url: document.getElementById('urlPiper').value.trim() }
+  };
+
+  try {
+    const res = await fetch('/api/backends/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.saved) {
+      if (msgEl) msgEl.textContent = '✓ Saved configuration';
+      document.querySelectorAll('.endpoint-input').forEach(input => { delete input.dataset.dirty; });
+      setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 3000);
+      runPreflightChecks();
+    }
+  } catch (e) {
+    if (msgEl) {
+      msgEl.style.color = 'var(--status-fail)';
+      msgEl.textContent = '✗ Error saving: ' + e.message;
+    }
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Save URLs';
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Local Engine Service Lifecycle & Console Streaming Manager
+// ═══════════════════════════════════════════════════════════════════
+
+const serviceStates = {
+  sd_webui: { since: 0, timer: null },
+  comfyui: { since: 0, timer: null },
+  ollama: { since: 0, timer: null },
+  whisper: { since: 0, timer: null },
+  piper: { since: 0, timer: null }
+};
+
+const SECTION_STATUS_BADGES = {
+  sd_webui: 'statusSd',
+  comfyui: 'statusComfy',
+  ollama: 'statusOllama',
+  whisper: 'statusWhisper',
+  piper: 'statusPiper'
+};
+
+async function updateServiceStatus(name) {
+  try {
+    const res = await fetch(`/api/backends/service/status?name=${name}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const svc = data.service;
+    if (!svc) return;
+
+    const pill = document.getElementById(`svcPill_${name}`);
+    const details = document.getElementById(`svcDetails_${name}`);
+    const btnStart = document.getElementById(`btnStart_${name}`);
+    const btnStop = document.getElementById(`btnStop_${name}`);
+    const btnRestart = document.getElementById(`btnRestart_${name}`);
+    const btnInstall = document.getElementById(`btnInstall_${name}`);
+    const statusBadge = document.getElementById(SECTION_STATUS_BADGES[name]);
+
+    if (pill) {
+      pill.className = `svc-pill ${svc.state}`;
+      pill.textContent = svc.state.toUpperCase();
+    }
+
+    if (statusBadge) {
+      if (svc.state === 'online') {
+        statusBadge.className = 'section-status online';
+        statusBadge.textContent = 'ONLINE';
+      } else if (svc.state === 'starting') {
+        statusBadge.className = 'section-status starting';
+        statusBadge.textContent = 'STARTING';
+      } else if (svc.state === 'installing') {
+        statusBadge.className = 'section-status starting';
+        statusBadge.textContent = 'INSTALLING';
+      } else {
+        statusBadge.className = REQUIRED.has(name) ? 'section-status offline' : 'section-status optional';
+        statusBadge.textContent = REQUIRED.has(name) ? 'OFFLINE' : 'STANDBY';
+      }
+    }
+
+    const info = BACKEND_MAP[name];
+    if (info) {
+      const dot = document.getElementById(info.dot);
+      const hudTxt = document.getElementById(info.hud);
+      if (svc.state === 'online') {
+        if (dot) dot.className = 'preflight-dot pass';
+        if (hudTxt) hudTxt.textContent = 'ONLINE';
+      } else if (svc.state === 'starting' || svc.state === 'installing') {
+        if (dot) dot.className = 'preflight-dot warn';
+        if (hudTxt) hudTxt.textContent = svc.state.toUpperCase();
+      }
+    }
+
+    if (name === 'sd_webui') {
+      const diagEl = document.getElementById('diagSdStatus');
+      if (diagEl) {
+        diagEl.textContent = svc.state === 'online' ? `AUTOMATIC1111 (Port 7860, PID ${svc.pid || 'running'})` : 'STANDBY';
+        diagEl.style.color = svc.state === 'online' ? 'var(--status-pass)' : 'var(--text-muted)';
+      }
+    } else if (name === 'ollama') {
+      const diagEl = document.getElementById('diagOllamaStatus');
+      if (diagEl) {
+        diagEl.textContent = svc.state === 'online' ? `Ollama CLI (Port 11434, PID ${svc.pid || 'running'})` : 'STANDBY';
+        diagEl.style.color = svc.state === 'online' ? 'var(--status-pass)' : 'var(--text-muted)';
+      }
+    }
+
+    if (details) {
+      if (svc.state === 'online') {
+        details.textContent = `Active on port ${svc.port} (PID ${svc.pid || 'running'})`;
+      } else if (svc.state === 'starting') {
+        if (!details.textContent.startsWith('Downloading')) {
+          details.textContent = `⏳ Booting engine... monitoring port ${svc.port}`;
+        }
+      } else if (svc.state === 'installing') {
+        details.textContent = `⚡ Running installation in background...`;
+      } else if (svc.installed) {
+        details.textContent = `Installed at ${svc.path}`;
+      } else {
+        details.textContent = `Not installed locally`;
+      }
+    }
+
+    if (btnStart) btnStart.disabled = (svc.state === 'online' || svc.state === 'starting' || svc.state === 'installing');
+    if (btnStop) btnStop.disabled = (svc.state === 'stopped');
+    if (btnRestart) btnRestart.disabled = (svc.state === 'installing');
+    if (btnInstall) {
+      btnInstall.style.display = (!svc.installed && name !== 'ollama') ? 'inline-flex' : 'none';
+      btnInstall.disabled = (svc.state === 'installing');
+    }
+
+    if (svc.state === 'starting' || svc.state === 'installing') {
+      const drawer = document.getElementById(`consoleDrawer_${name}`);
+      if (drawer && drawer.style.display === 'none') {
+        drawer.style.display = 'block';
+      }
+      startLogPolling(name);
+    }
+  } catch (e) {
+    console.error(`Failed to update status for ${name}:`, e);
+  }
+}
+
+async function serviceAction(name, action) {
+  const btnStart = document.getElementById(`btnStart_${name}`);
+  const btnStop = document.getElementById(`btnStop_${name}`);
+  if (btnStart) btnStart.disabled = true;
+  if (btnStop) btnStop.disabled = true;
+
+  if (action === 'start' || action === 'install' || action === 'restart') {
+    const drawer = document.getElementById(`consoleDrawer_${name}`);
+    if (drawer) drawer.style.display = 'block';
+  }
+
+  try {
+    const res = await fetch('/api/backends/service/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, action })
+    });
+    const data = await res.json();
+    await updateServiceStatus(name);
+    startLogPolling(name);
+    setTimeout(runPreflightChecks, 1500);
+  } catch (e) {
+    alert(`Service action failed: ${e.message}`);
+  }
+}
+
+function toggleConsole(name) {
+  const drawer = document.getElementById(`consoleDrawer_${name}`);
+  if (!drawer) return;
+  const isHidden = (drawer.style.display === 'none' || !drawer.style.display);
+  drawer.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) {
+    startLogPolling(name);
+  }
+}
+
+function clearConsole(name) {
+  const out = document.getElementById(`consoleOutput_${name}`);
+  if (out) out.textContent = '';
+  if (serviceStates[name]) serviceStates[name].since = 0;
+}
+
+function copyConsoleLogs(name) {
+  const out = document.getElementById(`consoleOutput_${name}`);
+  if (out) {
+    navigator.clipboard.writeText(out.textContent).then(() => {
+      alert('Console logs copied to clipboard.');
+    });
+  }
+}
+
+function startLogPolling(name) {
+  if (serviceStates[name] && serviceStates[name].timer) return;
+  pollLogs(name);
+}
+
+async function pollLogs(name) {
+  const state = serviceStates[name] || { since: 0 };
+  try {
+    const res = await fetch(`/api/backends/service/logs?name=${name}&since=${state.since}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.progress_summary) {
+        const details = document.getElementById(`svcDetails_${name}`);
+        if (details) details.textContent = data.progress_summary;
+      }
+      if (data.logs && data.logs.length > 0) {
+        const out = document.getElementById(`consoleOutput_${name}`);
+        if (out) {
+          if (out.textContent.includes('Waiting for')) {
+            out.textContent = '';
+          }
+          out.textContent += data.logs.join('\n') + '\n';
+          const autoscroll = document.getElementById(`autoscroll_${name}`);
+          if (!autoscroll || autoscroll.checked) {
+            out.scrollTop = out.scrollHeight;
+          }
+        }
+      }
+      state.since = data.next_since;
+      updateServiceStatus(name);
+      
+      const drawer = document.getElementById(`consoleDrawer_${name}`);
+      const isDrawerOpen = drawer && drawer.style.display !== 'none';
+      if (isDrawerOpen || data.status === 'starting' || data.status === 'installing') {
+        state.timer = setTimeout(() => {
+          state.timer = null;
+          pollLogs(name);
+        }, 1200);
+      } else {
+        state.timer = null;
+      }
+      return;
+    }
+  } catch (e) {
+    console.error('Log poll error:', e);
+  }
+  state.timer = null;
+}
+
+function pollAllServices() {
+  ['sd_webui', 'comfyui', 'ollama', 'whisper', 'piper'].forEach(updateServiceStatus);
+}
+
+// Automatic bootstrap on DOM load
+window.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.endpoint-input').forEach(input => {
+    input.addEventListener('input', () => { input.dataset.dirty = 'true'; });
+  });
+  setTimeout(runPreflightChecks, 250);
+  setTimeout(pollAllServices, 350);
+  setInterval(pollAllServices, 3500);
+});
+</script>
+</body>
+</html>
